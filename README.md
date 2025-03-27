@@ -33,11 +33,11 @@ Bienvenue sur le tableau de bord public du token **CKILFO**, déployé sur la **
 
 ## ✨ Fonctionnalités prévues
 
-- 📊 Affichage dynamique du `totalSupply()` ✅
-- 👛 Intégration future de `balanceOf()` par wallet
-- 💸 Mint contrôlé par le `owner`
-- 📄 Ajout d’un whitepaper PDF
-- 🔒 Intégration avec des outils de sécurité
+- 📊 Affichage dynamique du `totalSupply()` ✅  
+- 👛 Intégration future de `balanceOf()` par wallet  
+- 💸 Mint contrôlé par le `owner`  
+- 📄 Ajout d’un whitepaper PDF  
+- 🔒 Intégration avec des outils de sécurité  
 
 ---
 
