@@ -15,12 +15,12 @@ Bienvenue sur le tableau de bord public du token **CKILFO**, déployé sur la **
 
 ## 📦 Détails du token
 
-| Propriété      | Valeur                              |
-|----------------|-------------------------------------|
-| Nom du token   | CKILFO Token                        |
-| Symbole        | CKF                                 |
-| Réseau         | Binance Smart Chain - Testnet       |
-| Total Supply   | Affiché en live dans le dashboard   |
+| Propriété      | Valeur                            |
+|----------------|-----------------------------------|
+| Nom du token   | CKILFO Token                      |
+| Symbole        | CKF                               |
+| Réseau         | Binance Smart Chain - Testnet     |
+| Total Supply   | Affiché en live dans le dashboard |
 
 ---
 
