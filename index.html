@@ -41,10 +41,10 @@
     <input type="text" id="transferAddress" placeholder="Adresse de destination" style="width: 100%; padding: 10px; margin-top: 10px;">
     <input type="number" id="transferAmount" placeholder="Montant en CKF" style="width: 100%; padding: 10px; margin-top: 10px;">
 
-    <button onclick="mintTokens()" style="margin-top: 10px; padding: 10px 20px;">Mint</button>
+    <button id="mintBtn" onclick="mintTokens()" style="margin-top: 10px; padding: 10px 20px;">Mint</button>
     <button onclick="transferTokens()" style="margin-top: 10px; padding: 10px 20px;">Transférer</button>
 
-    <p id="txStatus" style="margin-top:10px;color:#555;"></p>
+    <p id="txStatus"></p>
 
     <br />
     <a href="https://testnet.bscscan.com/address/0x3D4fec067a565966294f7df0E415C828ec2Cc2C9#code" target="_blank">
@@ -60,11 +60,13 @@
       "function decimals() public view returns (uint8)",
       "function balanceOf(address account) public view returns (uint256)",
       "function mint(address to, uint256 amount) public",
-      "function transfer(address to, uint256 amount) public returns (bool)"
+      "function transfer(address to, uint256 amount) public returns (bool)",
+      "function owner() public view returns (address)"
     ];
 
     let signer;
     let contractWithSigner;
+    let isOwner = false;
 
     async function connectWallet() {
       if (window.ethereum) {
@@ -72,8 +74,17 @@
         const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = web3Provider.getSigner();
         contractWithSigner = new ethers.Contract(tokenAddress, abi, signer);
-        const address = await signer.getAddress();
-        document.getElementById("walletStatus").textContent = `Connecté : ${address}`;
+        const userAddress = await signer.getAddress();
+        const ownerAddress = await contractWithSigner.owner();
+
+        if (userAddress.toLowerCase() === ownerAddress.toLowerCase()) {
+          isOwner = true;
+          document.getElementById("walletStatus").textContent = `Connecté : ${userAddress} ✅ (Owner)`;
+        } else {
+          isOwner = false;
+          document.getElementById("walletStatus").textContent = `Connecté : ${userAddress} (Non-owner)`;
+          document.getElementById("mintBtn").disabled = true;
+        }
       } else {
         alert("Installez Metamask pour utiliser cette fonctionnalité.");
       }
@@ -94,11 +105,8 @@
 
     async function checkBalance() {
       const address = document.getElementById("walletAddress").value;
-      const status = document.getElementById("balance");
-      status.style.color = "red";
-
       if (!ethers.utils.isAddress(address)) {
-        status.textContent = "Adresse invalide";
+        document.getElementById("balance").textContent = "Adresse invalide";
         return;
       }
       try {
@@ -106,80 +114,53 @@
         const decimals = await contract.decimals();
         const rawBalance = await contract.balanceOf(address);
         const formattedBalance = ethers.utils.formatUnits(rawBalance, decimals);
-        status.style.color = "green";
-        status.textContent = formattedBalance + " CKF";
+        document.getElementById("balance").textContent = formattedBalance + " CKF";
       } catch (err) {
-        status.textContent = "Erreur lors de la lecture du solde.";
+        document.getElementById("balance").textContent = "Erreur";
         console.error(err);
       }
     }
 
     async function mintTokens() {
+      if (!isOwner) {
+        alert("Seul le propriétaire peut mint des tokens.");
+        return;
+      }
       const to = document.getElementById("transferAddress").value;
       const amount = document.getElementById("transferAmount").value;
-      const status = document.getElementById("txStatus");
-      status.style.color = "red";
-
-      if (!signer) {
-        status.textContent = "❌ Veuillez connecter votre portefeuille Metamask.";
+      if (!signer || !ethers.utils.isAddress(to)) {
+        document.getElementById("txStatus").textContent = "Portefeuille non connecté ou adresse invalide.";
         return;
       }
-      if (!ethers.utils.isAddress(to)) {
-        status.textContent = "❌ Adresse BSC invalide.";
-        return;
-      }
-      if (isNaN(amount) || Number(amount) <= 0) {
-        status.textContent = "❌ Le montant doit être supérieur à zéro.";
-        return;
-      }
-
       try {
         const decimals = await contractWithSigner.decimals();
         const amountInUnits = ethers.utils.parseUnits(amount, decimals);
         const tx = await contractWithSigner.mint(to, amountInUnits);
         await tx.wait();
-        status.style.color = "green";
-        status.textContent = "✅ Mint réussi !";
+        document.getElementById("txStatus").textContent = "Mint réussi !";
         loadTotalSupply();
       } catch (err) {
-        status.textContent = "❌ Erreur : " + (err?.message?.split('\n')[0] || "Échec de la transaction.");
+        document.getElementById("txStatus").textContent = "Erreur lors du mint.";
         console.error(err);
-      } finally {
-        setTimeout(() => { status.textContent = ""; }, 8000);
       }
     }
 
     async function transferTokens() {
       const to = document.getElementById("transferAddress").value;
       const amount = document.getElementById("transferAmount").value;
-      const status = document.getElementById("txStatus");
-      status.style.color = "red";
-
-      if (!signer) {
-        status.textContent = "❌ Veuillez connecter votre portefeuille Metamask.";
+      if (!signer || !ethers.utils.isAddress(to)) {
+        document.getElementById("txStatus").textContent = "Portefeuille non connecté ou adresse invalide.";
         return;
       }
-      if (!ethers.utils.isAddress(to)) {
-        status.textContent = "❌ Adresse BSC invalide.";
-        return;
-      }
-      if (isNaN(amount) || Number(amount) <= 0) {
-        status.textContent = "❌ Le montant doit être supérieur à zéro.";
-        return;
-      }
-
       try {
         const decimals = await contractWithSigner.decimals();
         const amountInUnits = ethers.utils.parseUnits(amount, decimals);
         const tx = await contractWithSigner.transfer(to, amountInUnits);
         await tx.wait();
-        status.style.color = "green";
-        status.textContent = "✅ Transfert réussi !";
+        document.getElementById("txStatus").textContent = "Transfert réussi !";
       } catch (err) {
-        status.textContent = "❌ Erreur : " + (err?.message?.split('\n')[0] || "Échec de la transaction.");
+        document.getElementById("txStatus").textContent = "Erreur lors du transfert.";
         console.error(err);
-      } finally {
-        setTimeout(() => { status.textContent = ""; }, 8000);
       }
     }
 
