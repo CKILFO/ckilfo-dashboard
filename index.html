@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -28,10 +27,24 @@
 
     <hr>
 
-    <h2>📥 Vérifier le solde d'une adresse</h2>
+    <h2>📅 Vérifier le solde d'une adresse</h2>
     <input type="text" id="walletAddress" placeholder="Entrez une adresse BSC Testnet" style="width: 100%; padding: 10px; margin-top: 5px;">
     <button onclick="checkBalance()" style="margin-top: 10px; padding: 10px 20px;">Vérifier le solde</button>
     <p><strong>Solde :</strong> <span id="balance">---</span></p>
+
+    <hr>
+
+    <h2>🏱 Mint & Transfert de Tokens</h2>
+    <button onclick="connectWallet()">Connecter Metamask</button>
+    <p id="walletStatus">Portefeuille non connecté</p>
+
+    <input type="text" id="transferAddress" placeholder="Adresse de destination" style="width: 100%; padding: 10px; margin-top: 10px;">
+    <input type="number" id="transferAmount" placeholder="Montant en CKF" style="width: 100%; padding: 10px; margin-top: 10px;">
+
+    <button onclick="mintTokens()" style="margin-top: 10px; padding: 10px 20px;">Mint</button>
+    <button onclick="transferTokens()" style="margin-top: 10px; padding: 10px 20px;">Transférer</button>
+
+    <p id="txStatus" style="margin-top:10px;color:#555;"></p>
 
     <br />
     <a href="https://testnet.bscscan.com/address/0x3D4fec067a565966294f7df0E415C828ec2Cc2C9#code" target="_blank">
@@ -45,8 +58,26 @@
     const abi = [
       "function totalSupply() public view returns (uint256)",
       "function decimals() public view returns (uint8)",
-      "function balanceOf(address account) public view returns (uint256)"
+      "function balanceOf(address account) public view returns (uint256)",
+      "function mint(address to, uint256 amount) public",
+      "function transfer(address to, uint256 amount) public returns (bool)"
     ];
+
+    let signer;
+    let contractWithSigner;
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = web3Provider.getSigner();
+        contractWithSigner = new ethers.Contract(tokenAddress, abi, signer);
+        const address = await signer.getAddress();
+        document.getElementById("walletStatus").textContent = `Connecté : ${address}`;
+      } else {
+        alert("Installez Metamask pour utiliser cette fonctionnalité.");
+      }
+    }
 
     async function loadTotalSupply() {
       try {
@@ -63,8 +94,11 @@
 
     async function checkBalance() {
       const address = document.getElementById("walletAddress").value;
+      const status = document.getElementById("balance");
+      status.style.color = "red";
+
       if (!ethers.utils.isAddress(address)) {
-        document.getElementById("balance").textContent = "Adresse invalide";
+        status.textContent = "Adresse invalide";
         return;
       }
       try {
@@ -72,10 +106,80 @@
         const decimals = await contract.decimals();
         const rawBalance = await contract.balanceOf(address);
         const formattedBalance = ethers.utils.formatUnits(rawBalance, decimals);
-        document.getElementById("balance").textContent = formattedBalance + " CKF";
+        status.style.color = "green";
+        status.textContent = formattedBalance + " CKF";
       } catch (err) {
-        document.getElementById("balance").textContent = "Erreur";
+        status.textContent = "Erreur lors de la lecture du solde.";
         console.error(err);
+      }
+    }
+
+    async function mintTokens() {
+      const to = document.getElementById("transferAddress").value;
+      const amount = document.getElementById("transferAmount").value;
+      const status = document.getElementById("txStatus");
+      status.style.color = "red";
+
+      if (!signer) {
+        status.textContent = "❌ Veuillez connecter votre portefeuille Metamask.";
+        return;
+      }
+      if (!ethers.utils.isAddress(to)) {
+        status.textContent = "❌ Adresse BSC invalide.";
+        return;
+      }
+      if (isNaN(amount) || Number(amount) <= 0) {
+        status.textContent = "❌ Le montant doit être supérieur à zéro.";
+        return;
+      }
+
+      try {
+        const decimals = await contractWithSigner.decimals();
+        const amountInUnits = ethers.utils.parseUnits(amount, decimals);
+        const tx = await contractWithSigner.mint(to, amountInUnits);
+        await tx.wait();
+        status.style.color = "green";
+        status.textContent = "✅ Mint réussi !";
+        loadTotalSupply();
+      } catch (err) {
+        status.textContent = "❌ Erreur : " + (err?.message?.split('\n')[0] || "Échec de la transaction.");
+        console.error(err);
+      } finally {
+        setTimeout(() => { status.textContent = ""; }, 8000);
+      }
+    }
+
+    async function transferTokens() {
+      const to = document.getElementById("transferAddress").value;
+      const amount = document.getElementById("transferAmount").value;
+      const status = document.getElementById("txStatus");
+      status.style.color = "red";
+
+      if (!signer) {
+        status.textContent = "❌ Veuillez connecter votre portefeuille Metamask.";
+        return;
+      }
+      if (!ethers.utils.isAddress(to)) {
+        status.textContent = "❌ Adresse BSC invalide.";
+        return;
+      }
+      if (isNaN(amount) || Number(amount) <= 0) {
+        status.textContent = "❌ Le montant doit être supérieur à zéro.";
+        return;
+      }
+
+      try {
+        const decimals = await contractWithSigner.decimals();
+        const amountInUnits = ethers.utils.parseUnits(amount, decimals);
+        const tx = await contractWithSigner.transfer(to, amountInUnits);
+        await tx.wait();
+        status.style.color = "green";
+        status.textContent = "✅ Transfert réussi !";
+      } catch (err) {
+        status.textContent = "❌ Erreur : " + (err?.message?.split('\n')[0] || "Échec de la transaction.");
+        console.error(err);
+      } finally {
+        setTimeout(() => { status.textContent = ""; }, 8000);
       }
     }
 
