@@ -34,17 +34,22 @@
 
     <hr>
 
-    <h2>🏱 Mint & Transfert de Tokens</h2>
+    <h2>🌟 Section Admin (owner uniquement)</h2>
+    <div id="adminSection" style="display: none;">
+      <p>Vous avez accès aux fonctions avancées.</p>
+      <input type="text" id="transferAddress" placeholder="Adresse de destination" style="width: 100%; padding: 10px; margin-top: 10px;">
+      <input type="number" id="transferAmount" placeholder="Montant en CKF" style="width: 100%; padding: 10px; margin-top: 10px;">
+      <button id="mintBtn" onclick="mintTokens()" style="margin-top: 10px; padding: 10px 20px;">Mint</button>
+      <button id="transferBtn" onclick="transferTokens()" style="margin-top: 10px; padding: 10px 20px;">Transférer</button>
+      <p id="txStatus"></p>
+
+      <h3>📃 Historique des actions admin</h3>
+      <ul id="adminLog"></ul>
+    </div>
+
+    <br />
     <button onclick="connectWallet()">Connecter Metamask</button>
     <p id="walletStatus">Portefeuille non connecté</p>
-
-    <input type="text" id="transferAddress" placeholder="Adresse de destination" style="width: 100%; padding: 10px; margin-top: 10px;">
-    <input type="number" id="transferAmount" placeholder="Montant en CKF" style="width: 100%; padding: 10px; margin-top: 10px;">
-
-    <button id="mintBtn" onclick="mintTokens()" style="margin-top: 10px; padding: 10px 20px;">Mint</button>
-    <button onclick="transferTokens()" style="margin-top: 10px; padding: 10px 20px;">Transférer</button>
-
-    <p id="txStatus"></p>
 
     <br />
     <a href="https://testnet.bscscan.com/address/0x3D4fec067a565966294f7df0E415C828ec2Cc2C9#code" target="_blank">
@@ -70,8 +75,14 @@
 
     async function connectWallet() {
       if (window.ethereum) {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
         const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        const { chainId } = await web3Provider.getNetwork();
+        if (chainId !== 97) {
+          alert("Veuillez vous connecter au réseau Binance Smart Chain Testnet.");
+          return;
+        }
+
+        await window.ethereum.request({ method: "eth_requestAccounts" });
         signer = web3Provider.getSigner();
         contractWithSigner = new ethers.Contract(tokenAddress, abi, signer);
         const userAddress = await signer.getAddress();
@@ -80,14 +91,23 @@
         if (userAddress.toLowerCase() === ownerAddress.toLowerCase()) {
           isOwner = true;
           document.getElementById("walletStatus").textContent = `Connecté : ${userAddress} ✅ (Owner)`;
+          document.getElementById("adminSection").style.display = "block";
         } else {
           isOwner = false;
           document.getElementById("walletStatus").textContent = `Connecté : ${userAddress} (Non-owner)`;
-          document.getElementById("mintBtn").disabled = true;
+          document.getElementById("adminSection").style.display = "none";
         }
       } else {
         alert("Installez Metamask pour utiliser cette fonctionnalité.");
       }
+    }
+
+    function updateAdminLog(action, to, amount) {
+      const log = document.getElementById("adminLog");
+      const li = document.createElement("li");
+      const now = new Date().toLocaleString();
+      li.textContent = `${now} - ${action.toUpperCase()} de ${amount} CKF vers ${to}`;
+      log.prepend(li);
     }
 
     async function loadTotalSupply() {
@@ -128,39 +148,61 @@
       }
       const to = document.getElementById("transferAddress").value;
       const amount = document.getElementById("transferAmount").value;
+      const mintBtn = document.getElementById("mintBtn");
+
       if (!signer || !ethers.utils.isAddress(to)) {
         document.getElementById("txStatus").textContent = "Portefeuille non connecté ou adresse invalide.";
         return;
       }
+      if (Number(amount) <= 0 || Number(amount) > 100000) {
+        alert("Montant invalide ou trop élevé (max 100000 CKF).");
+        return;
+      }
+
       try {
+        mintBtn.disabled = true;
         const decimals = await contractWithSigner.decimals();
         const amountInUnits = ethers.utils.parseUnits(amount, decimals);
         const tx = await contractWithSigner.mint(to, amountInUnits);
         await tx.wait();
         document.getElementById("txStatus").textContent = "Mint réussi !";
         loadTotalSupply();
+        updateAdminLog("mint", to, amount);
       } catch (err) {
-        document.getElementById("txStatus").textContent = "Erreur lors du mint.";
+        document.getElementById("txStatus").textContent = `Erreur : ${err.message}`;
         console.error(err);
+      } finally {
+        mintBtn.disabled = false;
       }
     }
 
     async function transferTokens() {
       const to = document.getElementById("transferAddress").value;
       const amount = document.getElementById("transferAmount").value;
+      const transferBtn = document.getElementById("transferBtn");
+
       if (!signer || !ethers.utils.isAddress(to)) {
         document.getElementById("txStatus").textContent = "Portefeuille non connecté ou adresse invalide.";
         return;
       }
+      if (Number(amount) <= 0) {
+        alert("Montant invalide.");
+        return;
+      }
+
       try {
+        transferBtn.disabled = true;
         const decimals = await contractWithSigner.decimals();
         const amountInUnits = ethers.utils.parseUnits(amount, decimals);
         const tx = await contractWithSigner.transfer(to, amountInUnits);
         await tx.wait();
         document.getElementById("txStatus").textContent = "Transfert réussi !";
+        updateAdminLog("transfert", to, amount);
       } catch (err) {
-        document.getElementById("txStatus").textContent = "Erreur lors du transfert.";
+        document.getElementById("txStatus").textContent = `Erreur : ${err.message}`;
         console.error(err);
+      } finally {
+        transferBtn.disabled = false;
       }
     }
 
