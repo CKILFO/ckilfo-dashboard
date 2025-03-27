@@ -25,7 +25,14 @@
     </p>
     <p><strong>Code source vérifié :</strong> ✅</p>
     <p><strong>Total Supply :</strong> <span id="totalSupply">Chargement...</span></p>
-    <p><strong>Whitepaper :</strong> à venir</p>
+
+    <hr>
+
+    <h2>📥 Vérifier le solde d'une adresse</h2>
+    <input type="text" id="walletAddress" placeholder="Entrez une adresse BSC Testnet" style="width: 100%; padding: 10px; margin-top: 5px;">
+    <button onclick="checkBalance()" style="margin-top: 10px; padding: 10px 20px;">Vérifier le solde</button>
+    <p><strong>Solde :</strong> <span id="balance">---</span></p>
+
     <br />
     <a href="https://testnet.bscscan.com/address/0x3D4fec067a565966294f7df0E415C828ec2Cc2C9#code" target="_blank">
       <img src="https://img.shields.io/badge/BscScan-Verified-green?style=for-the-badge&logo=binance" alt="BscScan Verified" />
@@ -37,7 +44,8 @@
     const tokenAddress = "0xABEa3d1c6BE1692d6559a59Ff3d9C4A17C012EfD";
     const abi = [
       "function totalSupply() public view returns (uint256)",
-      "function decimals() public view returns (uint8)"
+      "function decimals() public view returns (uint8)",
+      "function balanceOf(address account) public view returns (uint256)"
     ];
 
     async function loadTotalSupply() {
@@ -49,6 +57,24 @@
         document.getElementById("totalSupply").textContent = formattedSupply + " CKF";
       } catch (err) {
         document.getElementById("totalSupply").textContent = "Erreur de chargement";
+        console.error(err);
+      }
+    }
+
+    async function checkBalance() {
+      const address = document.getElementById("walletAddress").value;
+      if (!ethers.utils.isAddress(address)) {
+        document.getElementById("balance").textContent = "Adresse invalide";
+        return;
+      }
+      try {
+        const contract = new ethers.Contract(tokenAddress, abi, provider);
+        const decimals = await contract.decimals();
+        const rawBalance = await contract.balanceOf(address);
+        const formattedBalance = ethers.utils.formatUnits(rawBalance, decimals);
+        document.getElementById("balance").textContent = formattedBalance + " CKF";
+      } catch (err) {
+        document.getElementById("balance").textContent = "Erreur";
         console.error(err);
       }
     }
