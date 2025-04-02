@@ -63,34 +63,47 @@
 
     async function connectWallet() {
       if (typeof window.ethereum !== 'undefined') {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        const address = await signer.getAddress();
+        try {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          const address = await signer.getAddress();
 
-        document.getElementById('walletAddress').innerText = `Wallet connecté : ${address}`;
-        getCKFBalance(address);
+          document.getElementById('walletAddress').innerText = `Wallet connecté : ${address}`;
+          getCKFBalance(address);
+        } catch (error) {
+          console.error("Erreur lors de la connexion au wallet :", error);
+          alert("Échec de connexion au wallet. Consultez la console pour plus de détails.");
+        }
       } else {
         alert("Installez Metamask pour utiliser ce dashboard");
       }
     }
 
     async function getCKFBalance(address) {
-      const contract = new ethers.Contract(tokenAddress, tokenABI, provider);
-      const balance = await contract.balanceOf(address);
+      try {
+        const contract = new ethers.Contract(tokenAddress, tokenABI, provider);
+        const balance = await contract.balanceOf(address);
 
-      const ckfBalance = Number(ethers.utils.formatUnits(balance, 18));
-      document.getElementById('ckfBalance').innerText = `Solde CKF : ${ckfBalance}`;
+        const ckfBalance = Number(ethers.utils.formatUnits(balance, 18));
+        document.getElementById('ckfBalance').innerText = `Solde CKF : ${ckfBalance}`;
 
-      const progress = Math.min((ckfBalance / 1000) * 100, 100);
-      document.getElementById('progressBar').style.width = `${progress}%`;
+        const progress = Math.min((ckfBalance / 1000) * 100, 100);
+        document.getElementById('progressBar').style.width = `${progress}%`;
 
-      if (ckfBalance >= 1000) {
-        document.getElementById('premiumSection').style.display = 'block';
-      } else {
-        document.getElementById('notEligible').style.display = 'block';
+        if (ckfBalance >= 1000) {
+          document.getElementById('premiumSection').style.display = 'block';
+        } else {
+          document.getElementById('notEligible').style.display = 'block';
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du solde CKF :", error);
+        alert("Impossible de récupérer le solde CKF.");
       }
     }
+
+    // Expose la fonction globalement au cas où
+    window.connectWallet = connectWallet;
   </script>
 </body>
 </html>
