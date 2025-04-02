@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Tester les Fonctions CKF</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f7f9fc;
+      padding: 30px;
+      color: #222;
+      max-width: 600px;
+      margin: auto;
+    }
+    input {
+      padding: 10px;
+      width: 100%;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #2ecc71;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px 0;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #27ae60;
+    }
+    .result {
+      margin-top: 15px;
+      background: #eef;
+      padding: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test des Fonctions du Token CKF</h1>
+
+  <button onclick="connectWallet()">🔗 Connecter MetaMask</button>
+  <p>Adresse connectée : <span id="walletAddress">non connectée</span></p>
+
+  <h3>🔍 Vérifier le Solde (balanceOf)</h3>
+  <input type="text" id="balanceAddress" placeholder="Adresse à vérifier">
+  <button onclick="checkBalance()">Voir le solde</button>
+
+  <h3>💸 Transférer des CKF</h3>
+  <input type="text" id="transferTo" placeholder="Adresse destinataire">
+  <input type="number" id="transferAmount" placeholder="Montant à transférer">
+  <button onclick="sendCKF()">Transférer</button>
+
+  <h3>🪙 Mint des CKF</h3>
+  <input type="text" id="mintTo" placeholder="Adresse destinataire">
+  <input type="number" id="mintAmount" placeholder="Montant à mint">
+  <button onclick="mintCKF()">Mint</button>
+
+  <div id="result" class="result"></div>
+
+  <script>
+    const tokenAddress = "0x782bb7d8c3b4e69030c959ed095cfba225ea7438";
+    const tokenABI = [
+      "function balanceOf(address) view returns (uint256)",
+      "function transfer(address to, uint256 amount) returns (bool)",
+      "function mint(address to, uint256 amount)"
+    ];
+
+    let provider;
+    let signer;
+    let contract;
+
+    async function connectWallet() {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const address = await signer.getAddress();
+      document.getElementById('walletAddress').textContent = address;
+      contract = new ethers.Contract(tokenAddress, tokenABI, signer);
+    }
+
+    async function checkBalance() {
+      const addr = document.getElementById('balanceAddress').value;
+      const bal = await contract.balanceOf(addr);
+      const ckf = ethers.utils.formatUnits(bal, 18);
+      document.getElementById('result').textContent = `Solde de ${addr} : ${ckf} CKF`;
+    }
+
+    async function sendCKF() {
+      const to = document.getElementById('transferTo').value;
+      const amount = document.getElementById('transferAmount').value;
+      const tx = await contract.transfer(to, ethers.utils.parseUnits(amount, 18));
+      await tx.wait();
+      document.getElementById('result').textContent = `✅ ${amount} CKF transférés à ${to}`;
+    }
+
+    async function mintCKF() {
+      const to = document.getElementById('mintTo').value;
+      const amount = document.getElementById('mintAmount').value;
+      const tx = await contract.mint(to, ethers.utils.parseUnits(amount, 18));
+      await tx.wait();
+      document.getElementById('result').textContent = `🪙 ${amount} CKF mintés pour ${to}`;
+    }
+  </script>
+</body>
+</html>
