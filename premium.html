@@ -65,6 +65,14 @@
       if (typeof window.ethereum !== 'undefined') {
         try {
           provider = new ethers.providers.Web3Provider(window.ethereum);
+          const network = await provider.getNetwork();
+
+          // Vérification du réseau BSC Testnet (chainId = 97)
+          if (network.chainId !== 97) {
+            alert("Veuillez vous connecter au Binance Smart Chain Testnet (chainId 97).");
+            return;
+          }
+
           await provider.send("eth_requestAccounts", []);
           signer = provider.getSigner();
           const address = await signer.getAddress();
