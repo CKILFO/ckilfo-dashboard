@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="style.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CKILFO Dashboard</title>
+  <title>CKILFO Zone Premium - Token CKF sur BSC Testnet</title>
+  <meta name="description" content="Zone Premium du Dashboard CKILFO - Outils avancés, services exclusifs et accès conditionné pour les détenteurs de CKF sur BSC Testnet." />
+  <meta property="og:title" content="CKILFO Zone Premium - Accès réservé CKF" />
+  <meta property="og:description" content="Accédez aux outils premium, airdrops, stats réseau et services CKF en possédant au moins 1000 CKF." />
+  <meta property="og:url" content="https://ckilfo.github.io/ckilfo-dashboard/premium.html" />
+  <meta property="og:type" content="website" />
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
   <style>
     .fade-in {
@@ -13,6 +18,9 @@
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    .back-button {
+      margin-top: 30px;
     }
   </style>
 </head>
@@ -45,6 +53,12 @@
       <span style="display: inline-block; background-color: #27ae60; color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold;">
         ✅ Membre Premium
       </span>
+    </div>
+
+    <div class="back-button">
+      <a href="index.html" style="text-decoration: none;">
+        <button>🏠 Retour à l'accueil</button>
+      </a>
     </div>
   </div>
 
