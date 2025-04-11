@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -5,23 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CKILFO Dashboard - Token CKF sur BSC Testnet</title>
   <meta name="description" content="Dashboard interactif du token CKILFO (CKF) sur BSC Testnet : vérification de solde, zone premium, mint et transferts de tokens via MetaMask." />
-  <meta property="og:title" content="CKILFO Dashboard - Token CKF BSC Testnet" />
-  <meta property="og:description" content="Dashboard interactif du token CKILFO - Vérification, zone premium, mint, transferts, et plus." />
-  <meta property="og:url" content="https://ckilfo.github.io/ckilfo-dashboard/" />
-  <meta property="og:type" content="website" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1096866087067642" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
   <style>
-    .fade-in {
-      animation: fadeIn 1s ease-in;
-    }
+    .fade-in { animation: fadeIn 1s ease-in; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-    .back-button {
-      margin-top: 30px;
     }
   </style>
 </head>
@@ -52,9 +43,6 @@
       <span style="display: inline-block; background-color: #27ae60; color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold;">
         ✅ Membre Premium
       </span>
-    </div>
-    <div class="back-button">
-      <a href="index.html" style="text-decoration: none;"><button>🏠 Retour à l'accueil</button></a>
     </div>
   </div>
 
@@ -89,33 +77,7 @@
     const tokenABI = ["function balanceOf(address owner) view returns (uint256)"];
     const vestingAddress = "0x0d8870E5aB3D00e45F67f1814ADF93E0d690F861";
     const vestingABI = ["function totalVested() view returns (uint256)"];
-
     let provider, signer;
-
-    async function connectWallet() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          const network = await provider.getNetwork();
-          if (network.chainId !== 97) {
-            alert("Veuillez vous connecter au Binance Smart Chain Testnet (chainId 97).");
-            return;
-          }
-          await provider.send("eth_requestAccounts", []);
-          signer = provider.getSigner();
-          const address = await signer.getAddress();
-          document.getElementById('walletAddress').innerText = `Wallet connecté : ${address}`;
-          getCKFBalance(address);
-          await loadBotInfo();
-          await getVestingAmount();
-        } catch (error) {
-          console.error("Erreur connexion wallet:", error);
-          alert("Erreur de connexion. Consulte la console pour plus de détails.");
-        }
-      } else {
-        alert("Installez Metamask pour utiliser ce dashboard");
-      }
-    }
 
     async function getCKFBalance(address) {
       try {
@@ -131,22 +93,11 @@
           document.getElementById('notEligible').style.display = 'block';
         }
       } catch (error) {
-        console.error("Erreur solde CKF:", error);
+        console.error("Erreur solde CKF :", error);
       }
     }
 
-    async function getVestingAmount() {
-      try {
-        const contract = new ethers.Contract(vestingAddress, vestingABI, provider);
-        const amount = await contract.totalVested();
-        const formatted = ethers.utils.formatUnits(amount, 18);
-        document.getElementById('vestingAmount').innerText = `${formatted} CKF bloqués`;
-      } catch (err) {
-        console.error("Erreur vesting:", err);
-        document.getElementById('vestingAmount').innerText = "Erreur de lecture.";
-      }
-    }
-
+    // Lecture infos BOT (futur backend ou JSON simulé ici)
     async function loadBotInfo() {
       const botData = [
         "✅ Nouvelle récompense disponible pour les membres actifs.",
@@ -155,6 +106,46 @@
       ];
       const botFeed = document.getElementById('botFeed');
       botFeed.innerHTML = botData.map(msg => `<p>• ${msg}</p>`).join('');
+    }
+
+    // Lecture montant Vesting (exemple avec contrat vesting)
+    async function getVestingAmount() {
+      try {
+        const contract = new ethers.Contract(vestingAddress, vestingABI, provider);
+        const amount = await contract.totalVested();
+        const formatted = ethers.utils.formatUnits(amount, 18);
+        document.getElementById('vestingAmount').innerText = `${formatted} CKF bloqués`;
+      } catch (err) {
+        console.error("Erreur vesting :", err);
+        document.getElementById('vestingAmount').innerText = "Erreur de lecture.";
+      }
+    }
+
+    // Charger automatiquement après connexion
+    window.connectWallet = async function () {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          const network = await provider.getNetwork();
+          if (network.chainId !== 97) {
+            alert("Connecte-toi au BSC Testnet (chainId 97).");
+            return;
+          }
+
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          const address = await signer.getAddress();
+          document.getElementById('walletAddress').innerText = `Wallet connecté : ${address}`;
+          getCKFBalance(address);
+          await loadBotInfo();
+          await getVestingAmount();
+        } catch (e) {
+          console.error(e);
+          alert("Erreur de connexion");
+        }
+      } else {
+        alert("Installe Metamask");
+      }
     }
   </script>
 </body>
